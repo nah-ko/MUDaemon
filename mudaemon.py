@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+
+# Multi-usage daemon
+# This daemon can be used for file transfert, file conversion...
+
+# $Id$
+
 import sys, os, time, signal
 from signal import SIGTERM
 from signal import SIGHUP
