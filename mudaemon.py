@@ -34,14 +34,27 @@ polltime           = 10
 listfile           = '/tmp/liste'
 command            = ''
 
-def read_conf(signum=0, frame=''):
+def stop(signum=0, frame=''):
+    '''Stopping daemon
+    '''
+
+    log.info('Stopping MuDaemon')
+
+def reload(signum=0, frame=''):
+    ''' Reload daemon
+    '''
+
+    log.info('Reloading MuDaemon...')
+    read_conf()
+
+def read_conf():
     ''' Reading configuration file
     '''
 
     import ConfigParser
     global configuration_file
-    global pidfile
-    global polltime, listfile, command, rhost, ruser, rpath
+    global loglevel, pidfile
+    global polltime, listfile, command
 
     sys.stdout.write("Loading configuration file '%s'\n" \
 			% configuration_file )
@@ -64,33 +77,33 @@ def process_file(file='/tmp/liste'):
     '''
 
     import popen2
-    global processflag
+    global processflag, log
 
-    log.debug ("process_file (flag=%s)\n" % processflag)
+    log.debug ("in process_file (flag=%s)" % processflag)
     if processflag == 'no':
-    	log.err ("Processing already engaged ! :)\n")
+    	log.err ("Processing already engaged ! :)")
     if os.path.exists(file) and processflag == 'yes':
 	    processflag = 'no'
-            log.info ("INFO : Processing engaged ! :)\n")
+            log.info ("Processing engaged ! :)")
 	    f = open(file,'r')
 	    for data in f.read().split('\n'):
 		    if data <> '':
-			    log.info ("Working on: \"%s\"\n" % data)
+			    log.info ("Working on: %s" % data)
 			    cmd = command % data
-			    log.debug ("DEBUG : command=%s\n" % cmd)
+			    log.debug ("command=%s" % cmd)
 			    pout, pin, perr = popen2.popen3(cmd)
 			    OUT = pout.read()
 			    ERR = perr.read()
-			    log.debug ("DEBUG : out=%s err=%s\n" % (OUT, ERR))
+			    log.debug ("out=%s err=%s" % (OUT, ERR))
 			    if not OUT == '':
-			    	log.info ("INFO : \"%s\"\n" % OUT)
+			    	log.err ("%s" % OUT)
 			    if not ERR == '':
-			    	log.err ("ERROR : \"%s\"\n" % ERR)
+			    	log.err ("%s" % ERR)
 	    f.close()
 	    processflag = 'yes'
 	    os.remove(file)
     else:
-    	log.notice ("Nothing to do, sleeping\n")
+    	log.debug ("Nothing to do, sleeping")
 
 def daemonize(stdin='/dev/null', stdout='/dev/null', stderr='/dev/null', pidfile=None, startmsg = 'started with pid %s'):
     '''This forks the current process into a daemon.
@@ -108,7 +121,7 @@ def daemonize(stdin='/dev/null', stdout='/dev/null', stderr='/dev/null', pidfile
         if pid > 0:
             sys.exit(0) # Exit first parent.
     except OSError, e: 
-        log.err ("fork #1 failed: (%d) %s\n" % (e.errno, e.strerror))
+        log.err ("fork #1 failed: (%d) %s" % (e.errno, e.strerror))
         sys.exit(1)
         
     # Decouple from parent environment.
@@ -122,7 +135,7 @@ def daemonize(stdin='/dev/null', stdout='/dev/null', stderr='/dev/null', pidfile
         if pid > 0:
             sys.exit(0) # Exit second parent.
     except OSError, e: 
-        log.err ("fork #2 failed: (%d) %s\n" % (e.errno, e.strerror))
+        log.err ("fork #2 failed: (%d) %s" % (e.errno, e.strerror))
         sys.exit(1)
         
     # Now I am a daemon!
@@ -142,76 +155,80 @@ def daemonize(stdin='/dev/null', stdout='/dev/null', stderr='/dev/null', pidfile
     os.dup2(se.fileno(), sys.stderr.fileno())
 
 def startstop(stdout='/dev/null', stderr=None, stdin='/dev/null', pidfile='pid.txt', startmsg = 'Started with pid %s' ):
-	if len(sys.argv) > 1:
-		action = sys.argv[1]
+    '''Start, stop restart and reload function.
+    '''
+
+    if len(sys.argv) > 1:
+	action = sys.argv[1]
+	try:
+		pf  = file(pidfile,'r')
+		pid = int(pf.read().strip())
+		pf.close()
+	except IOError:
+		pid = None
+	if 'reload' == action:
+		sys.stdout.write("Reloading MUdaemon\n")
+		sys.stdout.flush()
+		if not pid:
+			mess = "Could not reload, pid file '%s' missing\n"
+			sys.stderr.write(mess % pidfile)
+			sys.exit(1)
+		os.kill(pid,SIGHUP)
+		sys.exit(0)
+	if 'stop' == action or 'restart' == action:
+		if not pid:
+			mess = "Could not stop, pid file '%s' missing.\n"
+			sys.stderr.write(mess % pidfile)
+			sys.exit(1)
 		try:
-			pf  = file(pidfile,'r')
-			pid = int(pf.read().strip())
-			pf.close()
-		except IOError:
-			pid = None
-		if 'reload' == action:
-			if not pid:
-				mess = "Could not reload, pid file '%s' missing\n"
-				sys.stderr.write(mess % pidfile)
+			sys.stdout.write("Stopping daemon...\n")
+			while 1:
+				os.kill(pid,SIGTERM)
+				time.sleep(1)
+		except OSError, err:
+			err = str(err)
+			if err.find("No such process") > 0:
+				os.remove(pidfile)
+				if 'stop' == action:
+					sys.exit(0)
+				action = 'start'
+				pid = None
+			else:
+				print str(err)
 				sys.exit(1)
-			os.kill(pid,SIGHUP)
-			sys.exit(0)
-		if 'stop' == action or 'restart' == action:
-			if not pid:
-				mess = "Could not stop, pid file '%s' missing.\n"
-				sys.stderr.write(mess % pidfile)
-				sys.exit(1)
-			try:
-				sys.stdout.write("Stopping daemon...\n")
-				while 1:
-					os.kill(pid,SIGTERM)
-					time.sleep(1)
-			except OSError, err:
-				err = str(err)
-				if err.find("No such process") > 0:
-					os.remove(pidfile)
-					if 'stop' == action:
-						sys.exit(0)
-					action = 'start'
-					pid = None
-				else:
-					print str(err)
-					sys.exit(1)
-		if 'start' == action:
-			if pid:
-				mess = "Start aborded since pid file '%s' exists.\n"
-				sys.stderr.write(mess % pidfile)
-				sys.exit(1)
-			daemonize(stdout=stdout, stderr=stderr, stdin=stdin, pidfile=pidfile, startmsg=startmsg)
-			return
-	else:
-		print "usage: %s start|stop|restart|reload" % sys.argv[0]
-		sys.exit(2)
+	if 'start' == action:
+		sys.stdout.write("MUdaemon starting \n")
+		sys.stdout.flush()
+		if pid:
+			mess = "Start aborded since pid file '%s' exists.\n"
+			sys.stderr.write(mess % pidfile)
+			sys.exit(1)
+		daemonize(stdout=stdout, stderr=stderr, stdin=stdin, pidfile=pidfile, startmsg=startmsg)
+		return
+    else:
+	print "usage: %s start|stop|restart|reload" % sys.argv[0]
+	sys.exit(2)
 
 def main():
     '''This is the main function run by the daemon.
        This execute the "process_file" function waiting during
        "polltime" seconds.
     '''
-    log.info ('Daemon started with pid %d\n' % os.getpid() )
-    log.info ('Daemon stdout output\n')
-    log.info ('Daemon stderr output\n')
+    log.info ('Mu-Daemon started with pid %d' % os.getpid() )
     while 1:
-	log.debug('DEBUG : Wainting (%d sec)\n' % polltime)
+	log.debug('Waiting... (%d sec)' % polltime)
         time.sleep(polltime)
-	log.debug('DEBUG : Do process\n')
+	log.debug('Do process')
 	process_file(listfile)
     
 if __name__ == "__main__":
-    sys.stdout.write("MUdaemon starting \n")
-    sys.stdout.flush()
-
     processflag = 'yes'
     read_conf()
 
     # Reload configuration file if receiving a HUP signal
-    signal.signal(signal.SIGHUP, read_conf)
+    signal.signal(signal.SIGHUP, reload)
+    # Stop daemon if receiving a TERM signal
+    signal.signal(signal.SIGTERM, stop)
 
     # Start/stop/restart and reload routine
     startstop(pidfile=pidfile)
