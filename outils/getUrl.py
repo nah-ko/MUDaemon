@@ -6,13 +6,16 @@
 # $Id$
 
 import sys, os, time, signal, socket
-from signal import SIGTERM
-from signal import SIGHUP
 
-def convert_file(datas, action, outfile, verbosity='off'):
+def convert_dir(directory, action, outfile, verbosity=false):
+    ''' Converting directory recursivly into asked mode '''
+
+def convert_file(infile, action, outfile, verbosity=false):
     ''' Converting datas into asked mode '''
 
-    link, url, category = datas
+    # Single file, consider ParentCategory not existent
+    pcategory = ""
+    link, urlname, category = read_file(infile, verbosity)
     # When there is no subdir I suppose it's not an important link
     if category == "":
     	category = "Other"
@@ -21,9 +24,9 @@ def convert_file(datas, action, outfile, verbosity='off'):
 
     # Moving datas according to action
     if action == 'sql':
-    	result = "INSERT (Url, Nom_url, Categ) INTO favoris VALUES ('%s', '%s', '%s')" % (link, url, category)
+    	result = "INSERT (Link, UrlName, Category, ParentCategory) INTO favoris VALUES ('%s', '%s', '%s', '%s')" % (link, urlname, category, pcategory)
     elif action == 'html':
-    	result = "%s - <a href=\"%s\"> %s </a>" % (category, url, link)
+    	result = "%s - <a href=\"%s\"> %s </a>" % (category, urlname, link)
     if verbosity:
     	print "Resultat: %s" % result
     # Open outfile in creation mode
@@ -31,7 +34,7 @@ def convert_file(datas, action, outfile, verbosity='off'):
     file.write(result)
     file.close()
 
-def read_file(filename, verbosity='off'):
+def read_file(filename, verbosity=false):
     ''' Reading url file '''
 
     import ConfigParser
@@ -69,7 +72,7 @@ def main():
     from optparse import OptionParser
 
     # Define usage and give command line options to parser object
-    Usage  = "usage: %prog [options] dot_url_file output_file"
+    Usage  = "usage: %prog [options] favorite(file/dir) output_file"
     Parser = OptionParser(usage = Usage)
     Parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False, help="Verbose (default)")
     Parser.add_option("-q", "--quiet", action="store_false", dest="verbose", help="Be quiet...")
@@ -88,17 +91,23 @@ def main():
     elif options.HTML:
         action = "html"
 
-    # Printing some informations while in verbose mode
-    if options.verbose:
-	print "Going to convert %s file to %s file named %s.%s" % (args[0], action, args[1], action)
+    # Set the type of «favorite» argument
+    if os.path.isdir(args[1]):
+    	srcType = 'dir'
+    	if options.verbose:
+		print "Going to convert %s %s to %s file named %s.%s" % (args[0], srcType, action, args[1], action)
+    elif os.path.isfile(args[1]):
+    	# It's a single file
+    	srcType = 'file'
+    	# output filename creation (made with action)
+    	outputFile = args[1] + '.' + action
+    	if options.verbose:
+    		print "Output file: %s" % outputFile
+    	convert_file(args[0], action, outputFile, options.verbose)
+    	if options.verbose:
+		print "Going to convert %s %s to %s file named %s.%s" % (args[0], srcType, action, args[1], action)
 
-    # Get datas from the file
-    resultat = read_file(args[0], options.verbose)
-    # output filename creation (made with action)
-    outputFile = args[1] + '.' + action
-    if options.verbose:
-    	print "Output file: %s" % outputFile
-    convert_file(resultat, action, outputFile, options.verbose)
+
 
 if __name__ == "__main__":
     # Main code
