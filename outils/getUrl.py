@@ -5,7 +5,7 @@
 
 # $Id$
 
-import sys, os, time, signal, socket
+import sys, os, re
 
 def convert_dir(directory, action, outfile, verbosity='False'):
     ''' Converting directory recursivly into asked mode '''
@@ -45,7 +45,7 @@ def convert_dir(directory, action, outfile, verbosity='False'):
 
 		    # Moving datas according to action
 		    if action == 'sql':
-		    	result += "INSERT (Link, UrlName, Category, ParentCategory) INTO favoris VALUES ('%s', '%s', '%s', '%s')\n" % (link, urlname, current_cat, parent_cat)
+		    	result += "INSERT INTO favoris (Link, UrlName, Category, ParentCategory) VALUES ('%s', '%s', '%s', '%s');\n" % (link, re.escape(urlname), current_cat, parent_cat)
 		    elif action == 'html':
 		        if result == "": # only one time here, first pass
 			    result    += "<DL>\n<DT> %s\n" % current_cat
