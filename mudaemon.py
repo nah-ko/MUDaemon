@@ -209,7 +209,6 @@ if __name__ == "__main__":
 
     processflag = 'yes'
     read_conf()
-    log = Logger.Logger(loglevel)
 
     # Reload configuration file if receiving a HUP signal
     signal.signal(signal.SIGHUP, read_conf)
@@ -218,4 +217,5 @@ if __name__ == "__main__":
     startstop(pidfile=pidfile)
 
     # Main code
+    log = Logger.Logger(loglevel)
     main()
