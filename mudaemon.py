@@ -81,16 +81,12 @@ def process_file(file='/tmp/liste'):
     if os.path.exists(file) and processflag == 'yes':
 	    processflag = 'no'
             sys.stdout.write("INFO : Processing engaged ! :)\n")
-	    i = 0
 	    f = open(file,'r')
-	    data = f.read().split('\n')
-	    i = len(data)
-	    while 0 < i:
-		    i -= 1
-		    if data[0] <> '':
-			    sys.stdout.write("Sending \"%s\"\n" % data[0])
-			    cmd = command % data[0]
-			    if debug == 'true': sys.stdout.write("DEBUG : command=%s" % cmd)
+	    for data in f.read().split('\n'):
+		    if data <> '':
+			    sys.stdout.write("Working on: \"%s\"\n" % data)
+			    cmd = command % data
+			    if debug == 'true': sys.stdout.write("DEBUG : command=%s\n" % cmd)
 			    pout, pin, perr = popen2.popen3(cmd)
 			    OUT = pout.read()
 			    ERR = perr.read()
@@ -99,7 +95,6 @@ def process_file(file='/tmp/liste'):
 			    if not ERR == '': sys.stderr.write("ERROR : \"%s\"\n" % ERR)
 			    sys.stdout.flush()
 			    sys.stderr.flush()
-		    del data[0]
 	    f.close()
 	    processflag = 'yes'
 	    os.remove(file)
