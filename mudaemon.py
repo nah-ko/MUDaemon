@@ -9,6 +9,7 @@ import sys, os, time, signal, socket
 import Logger
 from signal import SIGTERM
 from signal import SIGHUP
+from signal import SIGUSR1
 
 '''This module is used to fork the current process into a daemon.
     Almost none of this is necessary (or advisable) if your daemon 
@@ -38,7 +39,40 @@ def stop(signum=0, frame=''):
     '''Stopping daemon
     '''
 
-    log.info('Stopping MuDaemon')
+    log.debug('In stop function')
+    #log.info('Stopping MuDaemon')
+    try:
+	pf  = file(pidfile,'r')
+	pid = int(pf.read().strip())
+	log.debug('pid : %d' % pid)
+	pf.close()
+    except IOError:
+	pid = None
+    if not pid:
+	log.debug('No pid file')
+        mess = "Could not stop, pid file '%s' missing.\n"
+	sys.stderr.write(mess % pidfile)
+	sys.exit(1)
+    try:
+        sys.stdout.write("Stopping daemon...\n")
+	log.info('Stopping Mu-Daemon...')
+	while 1:
+	    # tentative d'arret avec SIGUSR1 au lieu
+	    # de SIGTERM
+	    os.kill(pid,SIGUSR1)
+	    time.sleep(1)
+    except OSError, err:
+        err = str(err)
+	if err.find("No such process") > 0:
+	    log.debug('Remove pidfile %s' % pidfile )
+	    os.remove(pidfile)
+	    if 'stop' == action:
+	        sys.exit(0)
+	    action = 'start'
+	    pid = None
+	else:
+	    print str(err)
+	    sys.exit(1)
 
 def reload(signum=0, frame=''):
     ''' Reload daemon
@@ -182,8 +216,11 @@ def startstop(stdout='/dev/null', stderr=None, stdin='/dev/null', pidfile='pid.t
 			sys.exit(1)
 		try:
 			sys.stdout.write("Stopping daemon...\n")
+			log.info('Stopping Mu-Daemon...')
 			while 1:
-				os.kill(pid,SIGTERM)
+				# tentative d'arret avec SIGUSR1 au lieu
+				# de SIGTERM
+				os.kill(pid,SIGUSR1)
 				time.sleep(1)
 		except OSError, err:
 			err = str(err)
@@ -223,7 +260,10 @@ def main():
     
 if __name__ == "__main__":
     processflag = 'yes'
+
+    # Read config file and initialize logger
     read_conf()
+    log = Logger.Logger(loglevel)
 
     # Reload configuration file if receiving a HUP signal
     signal.signal(signal.SIGHUP, reload)
@@ -234,5 +274,4 @@ if __name__ == "__main__":
     startstop(pidfile=pidfile)
 
     # Main code
-    log = Logger.Logger(loglevel)
     main()
