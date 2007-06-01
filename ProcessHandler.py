@@ -45,16 +45,6 @@ class ProcessHandler:
 
 		import fnmatch, os, shutil, time, commands
 
-		Rep2Depot  = '/home/toffe/perso/dev/demon_envoi_etebac_PACK-SOLUTIONS/Rep2Tests/'
-		Rep2Envoi = '/home/toffe/perso/dev/demon_envoi_etebac_PACK-SOLUTIONS/envoi/'
-
-		Dico = {'rachats':{'QUATREM_R*.txt': 'QUATREM_R', \
-			'DELUBAC_R*.txt': 'DELUBAC_R', \
-			'R*.txt': 'RACHAT'}, \
-			'versements':{'QUATREM_P*.txt': 'QUATREM_P', \
-			'DELUBAC_P*.txt': 'DELUBAC_P', \
-			'V*.txt': 'PRELEV'}}
-
 		for Cle in Dico.keys():
 			DicoSousCle = Dico.get(Cle)
 			for SousCle in DicoSousCle.keys():
