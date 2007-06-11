@@ -4,15 +4,18 @@ class ProcessHandler:
 	def __init__(self, log, options):
 		self.log = log
 		self.options = options
+		self.log.debug('Init ProcessHandler')
 
 	def file(self, file="/tmp/file"):
-		'''Lecture du fichier contenant la liste a envoyer sur l'autre machine
+		'''Lecture du fichier contenant la liste a envoyer sur
+		l'autre machine
 		'''
 
 		import popen2
-		global processflag, log
+		log = self.log
+		processflag = self.options
 
-		log.debug ("in process_file (flag=%s)" % processflag)
+		log.debug ("in file (flag=%s)" % processflag)
 		if processflag == 'no':
 			log.err ("Processing already engaged ! :)")
 		if os.path.exists(file) and processflag == 'yes':

@@ -34,6 +34,7 @@ pidfile            = '/tmp/daemon.pid'
 polltime           = 10
 listfile           = '/tmp/liste'
 command            = ''
+action             = ''
 
 def stop(signum=0, frame=''):
     '''Stopping daemon
@@ -88,7 +89,9 @@ def read_conf():
     import ConfigParser
     global configuration_file
     global loglevel, pidfile
-    global polltime, listfile, command
+    global polltime, command, action
+    global listfile
+    global toscan, tosend, ddict
 
     sys.stdout.write("Loading configuration file '%s'\n" \
 			% configuration_file )
@@ -103,41 +106,39 @@ def read_conf():
     loglevel = config.get('LOG', 'loglevel')
 
     polltime = config.getint('GLOBAL', 'polltime')
-    listfile = config.get('GLOBAL', 'listfile')
-    command  = config.get('GLOBAL', 'command')
+    action   = config.get('GLOBAL', 'action')
 
-def process_file(file='/tmp/liste'):
-    '''Lecture du fichier contenant la liste a envoyer sur l'autre machine
+    # selon l'action, on lit la section qui correspond
+    if action == 'FILE':
+	listfile = config.get(action, 'listfile')
+    elif action == 'DIRECTORY':
+	toscan = config.get(action, 'toscan')
+	tosend = config.get(action, 'tosend')
+	ddict  = config.get(action, 'ddict')
+    # de toutes facon l'option command est commune...
+    command  = config.get(action, 'command')
+
+def MyProcess(action=''):
+    '''Execution du processus indique dans la conf
     '''
 
     import popen2
+    import ProcessHandler
     global processflag, log
+    global listfile, directory
 
-    log.debug ("in process_file (flag=%s)" % processflag)
-    if processflag == 'no':
-    	log.err ("Processing already engaged ! :)")
-    if os.path.exists(file) and processflag == 'yes':
-	    processflag = 'no'
-            log.info ("Processing engaged ! :)")
-	    f = open(file,'r')
-	    for data in f.read().split('\n'):
-		    if data <> '':
-			    log.info ("Working on: %s" % data)
-			    cmd = command % data
-			    log.debug ("command=%s" % cmd)
-			    pout, pin, perr = popen2.popen3(cmd)
-			    OUT = pout.read()
-			    ERR = perr.read()
-			    log.debug ("out=%s err=%s" % (OUT, ERR))
-			    if not OUT == '':
-			    	log.err ("%s" % OUT)
-			    if not ERR == '':
-			    	log.err ("%s" % ERR)
-	    f.close()
-	    processflag = 'yes'
-	    os.remove(file)
+    MyAction = ProcessHandler.ProcessHandler(log,processflag)
+
+    log.debug ("in MyProcess (flag=%s)" % processflag)
+    if action == 'FILE':
+	log.debug ("processing FILE action")
+	MyAction.file(listfile)
+    elif action == 'DIRECTORY':
+	log.debug ("processing DIRECTORY action")
+	MyAction.file(directory)
     else:
-    	log.debug ("Nothing to do, sleeping")
+	log.debug ("No action given")
+
 
 def daemonize(stdin='/dev/null', stdout='/dev/null', stderr='/dev/null', pidfile=None, startmsg = 'started with pid %s'):
     '''This forks the current process into a daemon.
@@ -256,7 +257,7 @@ def main():
 	log.debug('Waiting... (%d sec)' % polltime)
         time.sleep(polltime)
 	log.debug('Do process')
-	process_file(listfile)
+	MyProcess(action)
     
 if __name__ == "__main__":
     processflag = 'yes'
