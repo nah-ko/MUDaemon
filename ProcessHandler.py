@@ -1,4 +1,8 @@
 #!/usr/bin/env python
+# $Id$
+#
+# Define a class who handle each kind of processes
+#
 
 class ProcessHandler:
 	def __init__(self, log, options):
@@ -7,55 +11,63 @@ class ProcessHandler:
 		self.log.debug('Init ProcessHandler')
 
 	def file(self, file="/tmp/file"):
-		'''Lecture du fichier contenant la liste a envoyer sur
-		l'autre machine
+		''' File processing; here we read a file in which are listed
+		files who're about to be passed to the command.
 		'''
 
-		import popen2
-		log = self.log
-		processflag = self.options
+		import popen2, os.path
 
-		log.debug ("in file (flag=%s)" % processflag)
+		log = self.log
+		processflag, command = self.options
+
+		log.debug ("::file():: flag=%s file=%s" % (processflag, file))
 		if processflag == 'no':
-			log.err ("Processing already engaged ! :)")
+			log.err ("::file():: Processing already engaged ! :)")
 		if os.path.exists(file) and processflag == 'yes':
 			processflag = 'no'
-			log.info ("Processing engaged ! :)")
+			log.info ("::file():: Processing engaged ! :)")
 			f = open(file,'r')
 			for data in f.read().split('\n'):
 				if data <> '':
-					log.info ("Working on: %s" % data)
+					log.info ("::file():: Working on: %s" % data)
 					cmd = command % data
-					log.debug ("command=%s" % cmd)
+					log.debug ("::file():: command=%s" % cmd)
 					pout, pin, perr = popen2.popen3(cmd)
 					OUT = pout.read()
 					ERR = perr.read()
-					log.debug ("out=%s err=%s" % (OUT, ERR))
+					log.debug ("::file():: out=%s err=%s" % (OUT, ERR))
 					if not OUT == '':
-						log.err ("%s" % OUT)
+						log.err ("::file():: %s" % OUT)
 					if not ERR == '':
-						log.err ("%s" % ERR)
+						log.err ("::file():: %s" % ERR)
 			f.close()
 			processflag = 'yes'
 			os.remove(file)
 		else:
-			log.debug ("Nothing to do, sleeping")
+			log.debug ("::file():: Nothing to do, sleeping")
 
-	def directory(self, directory="/tmp/mudaemon"):
-		'''Scan d'un repertoire en vue de l'execution d'une
-		commande selon le fichier qui y sera depose
+		log.debug ("::file():: end of function")
+
+	def directory(self, scandir="/tmp/mudaemon", senddir="/tmp/mudaemon",\
+		      dirdict={'a': {'A*.TXT': 'A'}}):
+		'''Directory scan, each known filename format will be
+		passed to command for processing
 		'''
 
 		import fnmatch, os, shutil, time, commands
 
-		for Cle in Dico.keys():
-			DicoSousCle = Dico.get(Cle)
-			for SousCle in DicoSousCle.keys():
-				#print "Cle: %s - SousCle: %s" % (Cle, SousCle)
-				for F in fnmatch.filter(os.listdir(Rep2Depot), SousCle):
-					Fichier     = Rep2Depot + F
-					Dest        = Rep2Envoi + DicoSousCle.get(SousCle) + '.TXT'
-					#print "Fichier: %s - Dest: %s" % (Fichier, Dest)
+		log = self.log
+		processflag, command = self.options
+
+		if processflag == 'yes':
+		    for Key in dirdict.keys():
+			dirdictSubKey = dirdict.get(Key)
+			for SubKey in dirdictSubKey.keys():
+				log.debug ("Key: %s - SubKey: %s" % (Key, SubKey))
+				for F in fnmatch.filter(os.listdir(scandir), SubKey):
+					Fichier     = scandir + F
+					Dest        = senddir + dirdictSubKey.get(SubKey) + '.TXT'
+					log.debug ("Fichier: %s - Dest: %s" % (Fichier, Dest))
 					TailleAvant = os.stat(Fichier).st_size
 					time.sleep(3)
 					TailleApres = os.stat(Fichier).st_size
@@ -67,13 +79,14 @@ class ProcessHandler:
 								Dest, \
 								str(why))
 			
-						Commande = "almacom -f %s -t %s" % \
-							(Fichier, DicoSousCle.get(SousCle))
+						#Commande = "almacom -f %s -t %s" % \
+						Commande = command % \
+							(Fichier, dirdictSubKey.get(SubKey))
 						Status, Output = commands.getstatusoutput(Commande)
 
 						if Status == 0:
-							Archives = Rep2Depot + 'archives/' +\
-						   		Cle +'/'
+							Archives = scandir + 'archives/' +\
+						   		Key +'/'
 							print "Archives: %s" % Archives
 							try:
 								shutil.move(Fichier, Archives)

@@ -35,6 +35,9 @@ polltime           = 10
 listfile           = '/tmp/liste'
 command            = ''
 action             = ''
+toscan             = ''
+tosend             = ''
+ddict              = {'a': {'A*.TXT': 'A'}}
 
 def stop(signum=0, frame=''):
     '''Stopping daemon
@@ -122,23 +125,27 @@ def MyProcess(action=''):
     '''Execution du processus indique dans la conf
     '''
 
-    import popen2
     import ProcessHandler
     global processflag, log
-    global listfile, directory
+    global listfile
+    global toscan, tosend, ddict
 
-    MyAction = ProcessHandler.ProcessHandler(log,processflag)
+    MyAction = ProcessHandler.ProcessHandler(log,(processflag,command))
 
     log.debug ("in MyProcess (flag=%s)" % processflag)
-    if action == 'FILE':
-	log.debug ("processing FILE action")
-	MyAction.file(listfile)
-    elif action == 'DIRECTORY':
-	log.debug ("processing DIRECTORY action")
-	MyAction.file(directory)
+    if processflag == 'no':
+	log.debug ("Nothing to do, sleeping")
+    elif processflag == 'yes':
+	if action == 'FILE':
+	    log.debug ("processing FILE action")
+	    MyAction.file(listfile)
+	elif action == 'DIRECTORY':
+	    log.debug ("processing DIRECTORY action")
+	    MyAction.file(toscan, tosend, ddict)
+	else:
+	    log.debug ("No action given")
     else:
-	log.debug ("No action given")
-
+	log.debug ("Flag not set, what's happenning ?")
 
 def daemonize(stdin='/dev/null', stdout='/dev/null', stderr='/dev/null', pidfile=None, startmsg = 'started with pid %s'):
     '''This forks the current process into a daemon.
