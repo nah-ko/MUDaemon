@@ -91,8 +91,8 @@ class ProcessHandler:
 							try:
 								shutil.move(Fichier, Archives)
 							except (IOError, os.error), why:
-								print "Can't copy %s to %s: %s" % (Fichier,\
+								log.debug ("Can't copy %s to %s: %s" % (Fichier,\
 									Archives, \
-									str(why))
+									str(why)))
 						else:
-							print "Erreur: %s" % Output
+							log.debug ("Erreur: %s" % Output)
