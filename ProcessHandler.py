@@ -48,8 +48,7 @@ class ProcessHandler:
 
 		log.debug ("::file():: end of function")
 
-	def directory(self, scandir="/tmp/mudaemon", senddir="/tmp/mudaemon",\
-		      dirdict={'a': {'A*.TXT': 'A'}}):
+	def directory(self, scandir="/tmp/mudaemon", senddir="/tmp/mudaemon", dirdict={'a': {'A*.TXT': 'A'}}):
 		'''Directory scan, each known filename format will be
 		passed to command for processing
 		'''
@@ -59,40 +58,47 @@ class ProcessHandler:
 		log = self.log
 		processflag, command = self.options
 
-		if processflag == 'yes':
-		    for Key in dirdict.keys():
-			dirdictSubKey = dirdict.get(Key)
-			for SubKey in dirdictSubKey.keys():
-				log.debug ("Key: %s - SubKey: %s" % (Key, SubKey))
-				for F in fnmatch.filter(os.listdir(scandir), SubKey):
-					Fichier     = scandir + F
-					Dest        = senddir + dirdictSubKey.get(SubKey) + '.TXT'
-					log.debug ("Fichier: %s - Dest: %s" % (Fichier, Dest))
-					TailleAvant = os.stat(Fichier).st_size
-					time.sleep(3)
-					TailleApres = os.stat(Fichier).st_size
-					if TailleApres == TailleAvant:
-						try:
-							shutil.copy(Fichier, Dest)
-						except (IOError, os.error), why:
-							print "Can't copy %s to %s: %s" % (Fichier,\
-								Dest, \
-								str(why))
-			
-						#Commande = "almacom -f %s -t %s" % \
-						Commande = command % \
-							(Fichier, dirdictSubKey.get(SubKey))
-						Status, Output = commands.getstatusoutput(Commande)
+		if not os.path.lexists(scandir):
+			log.notice("::directory():: %s doesn't exists !" % scandir)
+			return
 
-						if Status == 0:
-							Archives = scandir + 'archives/' +\
-						   		Key +'/'
-							print "Archives: %s" % Archives
+		if not os.path.lexists(senddir):
+			log.notice("::directory():: %s doesn't exists !" % senddir)
+			return
+
+		if processflag == 'yes':
+			log.debug("::directory():: flag=%s" % processflag)
+			for Key in dirdict.keys():
+				dirdictSubKey = dirdict.get(Key)
+				for SubKey in dirdictSubKey.keys():
+					log.debug("::directory():: Key: %s - SubKey: %s" % (Key, SubKey))
+					for F in fnmatch.filter(os.listdir(scandir), SubKey):
+						Fichier     = scandir + F
+						Dest        = senddir + dirdictSubKey.get(SubKey) + '.TXT'
+						log.debug("::directory():: Fichier: %s - Dest: %s" % (Fichier, Dest))
+						TailleAvant = os.stat(Fichier).st_size
+						time.sleep(3)
+						TailleApres = os.stat(Fichier).st_size
+						if TailleApres == TailleAvant:
 							try:
-								shutil.move(Fichier, Archives)
+								shutil.copy(Fichier, Dest)
 							except (IOError, os.error), why:
-								log.debug ("Can't copy %s to %s: %s" % (Fichier,\
-									Archives, \
-									str(why)))
-						else:
-							log.debug ("Erreur: %s" % Output)
+								log.debug("::directory():: Can't copy %s to %s: %s" % (Fichier, Dest, str(why)))
+
+							#Commande = "almacom -f %s -t %s" % \
+							Commande = command % (Fichier, dirdictSubKey.get(SubKey))
+							Status, Output = commands.getstatusoutput(Commande)
+
+							if Status == 0:
+								Archives = scandir + 'archives/' + Key +'/'
+								log.debug("::directory():: Archives: %s" % Archives)
+								try:
+									shutil.move(Fichier, Archives)
+								except (IOError, os.error), why:
+									log.debug("::directory():: Can't copy %s to %s: %s" % (Fichier, Archives, str(why)))
+							else:
+								log.debug("::directory():: Erreur: %s" % Output)
+		else:
+			log.debug("::directory():: Nothing to do, sleeping")
+
+		log.debug("::directory():: end of function")

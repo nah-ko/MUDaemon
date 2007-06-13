@@ -141,7 +141,7 @@ def MyProcess(action=''):
 	    MyAction.file(listfile)
 	elif action == 'DIRECTORY':
 	    log.debug ("processing DIRECTORY action")
-	    MyAction.file(toscan, tosend, ddict)
+	    MyAction.directory(toscan, tosend, ddict)
 	else:
 	    log.debug ("No action given")
     else:
@@ -263,7 +263,7 @@ def main():
     while 1:
 	log.debug('Waiting... (%d sec)' % polltime)
         time.sleep(polltime)
-	log.debug('Do process')
+	log.debug('Do %s process' % action)
 	MyProcess(action)
     
 if __name__ == "__main__":
