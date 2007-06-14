@@ -37,7 +37,7 @@ command            = ''
 action             = ''
 toscan             = ''
 tosend             = ''
-ddict              = {'a': {'A*.TXT': 'A'}}
+ddict              = {}
 
 def stop(signum=0, frame=''):
     '''Stopping daemon
@@ -90,6 +90,7 @@ def read_conf():
     '''
 
     import ConfigParser
+    from string import upper
     global configuration_file
     global loglevel, pidfile
     global polltime, command, action
@@ -117,7 +118,12 @@ def read_conf():
     elif action == 'DIRECTORY':
 	toscan = config.get(action, 'toscan')
 	tosend = config.get(action, 'tosend')
-	ddict  = config.get(action, 'ddict')
+	for S in config.get(action, 'ddict').split(','):
+		ddict[S] = {}
+		for O in config.options(S):
+			option           = upper(O)
+			ddict[S][option] = config.get(S,O)
+
     # de toutes facon l'option command est commune...
     command  = config.get(action, 'command')
 
