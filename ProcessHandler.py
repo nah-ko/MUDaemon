@@ -44,11 +44,11 @@ class ProcessHandler:
 			processflag = 'yes'
 			os.remove(file)
 		else:
-			log.debug ("::file():: Nothing to do, sleeping")
+			log.info ("::file():: Nothing to do, sleeping")
 
 		log.debug ("::file():: end of function")
 
-	def directory(self, scandir="/tmp/mudaemon", senddir="/tmp/mudaemon", dirdict={'a': {'A*.TXT': 'A'}}):
+	def directory(self, scandir="/tmp/mudaemon", senddir="/tmp/mudaemon", dirdict={}):
 		'''Directory scan, each known filename format will be
 		passed to command for processing
 		'''
@@ -68,13 +68,16 @@ class ProcessHandler:
 
 		if processflag == 'yes':
 			log.debug("::directory():: flag=%s" % processflag)
+			log.debug("::directory():: dico=%s" % dirdict)
 			for Key in dirdict.keys():
 				dirdictSubKey = dirdict.get(Key)
 				for SubKey in dirdictSubKey.keys():
 					log.debug("::directory():: Key: %s - SubKey: %s" % (Key, SubKey))
-					for F in fnmatch.filter(os.listdir(scandir), SubKey):
+					FileMask = dirdictSubKey.get(SubKey)
+					log.debug("::directory():: FileMask=%s" % FileMask)
+					for F in fnmatch.filter(os.listdir(scandir), FileMask):
 						Fichier     = scandir + F
-						Dest        = senddir + dirdictSubKey.get(SubKey) + '.TXT'
+						Dest        = senddir + SubKey + '.TXT'
 						log.debug("::directory():: Fichier: %s - Dest: %s" % (Fichier, Dest))
 						TailleAvant = os.stat(Fichier).st_size
 						time.sleep(3)
@@ -83,10 +86,10 @@ class ProcessHandler:
 							try:
 								shutil.copy(Fichier, Dest)
 							except (IOError, os.error), why:
-								log.debug("::directory():: Can't copy %s to %s: %s" % (Fichier, Dest, str(why)))
+								log.err("::directory():: Can't copy %s to %s: %s" % (Fichier, Dest, str(why)))
 
-							#Commande = "almacom -f %s -t %s" % \
-							Commande = command % (Fichier, dirdictSubKey.get(SubKey))
+							Commande = command % (Fichier, SubKey)
+							log.debug("::directory():: Commande=%s" % Commande)
 							Status, Output = commands.getstatusoutput(Commande)
 
 							if Status == 0:
@@ -95,10 +98,10 @@ class ProcessHandler:
 								try:
 									shutil.move(Fichier, Archives)
 								except (IOError, os.error), why:
-									log.debug("::directory():: Can't copy %s to %s: %s" % (Fichier, Archives, str(why)))
+									log.err("::directory():: Can't copy %s to %s: %s" % (Fichier, Archives, str(why)))
 							else:
-								log.debug("::directory():: Erreur: %s" % Output)
+								log.err("::directory():: Error: %s" % Output)
 		else:
-			log.debug("::directory():: Nothing to do, sleeping")
+			log.info("::directory():: Nothing to do, sleeping")
 
 		log.debug("::directory():: end of function")
