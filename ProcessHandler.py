@@ -67,6 +67,7 @@ class ProcessHandler:
 			return
 
 		if processflag == 'yes':
+			processflag = 'no'
 			log.debug("::directory():: flag=%s" % processflag)
 			log.debug("::directory():: dico=%s" % dirdict)
 			for Key in dirdict.keys():
@@ -89,7 +90,7 @@ class ProcessHandler:
 								log.err("::directory():: Can't copy %s to %s: %s" % (Fichier, Dest, str(why)))
 
 							Commande = command % (Fichier, SubKey)
-							log.debug("::directory():: Commande=%s" % Commande)
+							log.info("::directory():: Commande=%s" % Commande)
 							Status, Output = commands.getstatusoutput(Commande)
 
 							if Status == 0:
