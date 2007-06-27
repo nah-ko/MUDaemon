@@ -58,11 +58,11 @@ class ProcessHandler:
 		log = self.log
 		processflag, command = self.options
 
-		if not os.path.lexists(scandir):
+		if not os.path.exists(scandir):
 			log.notice("::directory():: %s doesn't exists !" % scandir)
 			return
 
-		if not os.path.lexists(senddir):
+		if not os.path.exists(senddir):
 			log.notice("::directory():: %s doesn't exists !" % senddir)
 			return
 
