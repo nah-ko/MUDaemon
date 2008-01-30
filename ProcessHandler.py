@@ -72,6 +72,13 @@ class ProcessHandler:
 			log.debug("::directory():: dico=%s" % dirdict)
 			for Key in dirdict.keys():
 				dirdictSubKey = dirdict.get(Key)
+				# We test if an overriding option
+				# 'tosend' has been written to config
+				# section
+				if dirdictSubKey.has_key('TOSEND'):
+				    # Value no more need to be present,
+				    # so we get it and erase from dict
+				    senddir = dirdictSubKey.pop('TOSEND')
 				for SubKey in dirdictSubKey.keys():
 					log.debug("::directory():: Key: %s - SubKey: %s" % (Key, SubKey))
 					FileMask = dirdictSubKey.get(SubKey)
