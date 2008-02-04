@@ -70,23 +70,28 @@ class ProcessHandler:
 			processflag = 'no'
 			log.debug("::directory():: flag=%s" % processflag)
 			log.debug("::directory():: dico=%s" % dirdict)
-			for Key in dirdict.keys():
-				dirdictSubKey = dirdict.get(Key)
-				# We test if an overriding option
-				# 'tosend' has been written to config
-				# section
-				if dirdictSubKey.has_key('TOSEND'):
+			log.debug("::directory():: scandir=%s" % scandir)
+			log.debug("::directory():: senddir=%s" % senddir)
+			for Key in dirdict:
+				# We test if an overriding option 'tosend' has been
+				# written to config section
+				if dirdict[Key].has_key('TOSEND'):
 				    # Value no more need to be present,
 				    # so we get it and erase from dict
-				    senddir = dirdictSubKey.pop('TOSEND')
-				    log.debug("::directory():: Modified senddir: %s" % senddir)
-				for SubKey in dirdictSubKey.keys():
+				    realsenddir = dirdict[Key].get('TOSEND')
+				    if not os.path.exists(realsenddir):
+					log.notice("::directory():: %s doesn't exists !" % realsenddir)
+					return
+				    log.info("::directory():: Modified senddir: %s" % realsenddir)
+				else:
+				    realsenddir = senddir
+				for SubKey in [ option for option in dirdict[Key] if option != 'TOSEND' ]:
 					log.debug("::directory():: Key: %s - SubKey: %s" % (Key, SubKey))
-					FileMask = dirdictSubKey.get(SubKey)
+					FileMask = dirdict[Key][SubKey]
 					log.debug("::directory():: FileMask=%s" % FileMask)
 					for F in fnmatch.filter(os.listdir(scandir), FileMask):
 						Fichier     = scandir + F
-						Dest        = senddir + SubKey + '.TXT'
+						Dest        = realsenddir + SubKey + '.TXT'
 						log.debug("::directory():: Fichier: %s - Dest: %s" % (Fichier, Dest))
 						TailleAvant = os.stat(Fichier).st_size
 						time.sleep(3)
