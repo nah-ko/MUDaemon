@@ -82,7 +82,7 @@ class ProcessHandler:
 				    if not os.path.exists(realsenddir):
 					log.notice("::directory():: %s doesn't exists !" % realsenddir)
 					return
-				    log.info("::directory():: Modified senddir: %s" % realsenddir)
+				    log.debug("::directory():: Modified senddir: %s" % realsenddir)
 				else:
 				    realsenddir = senddir
 				for SubKey in [ option for option in dirdict[Key] if option != 'TOSEND' ]:
