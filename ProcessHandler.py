@@ -79,6 +79,7 @@ class ProcessHandler:
 				    # Value no more need to be present,
 				    # so we get it and erase from dict
 				    senddir = dirdictSubKey.pop('TOSEND')
+				    log.debug("::directory():: Modified senddir: %s" % senddir)
 				for SubKey in dirdictSubKey.keys():
 					log.debug("::directory():: Key: %s - SubKey: %s" % (Key, SubKey))
 					FileMask = dirdictSubKey.get(SubKey)
