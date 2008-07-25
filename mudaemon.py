@@ -38,6 +38,7 @@ action             = ''
 toscan             = ''
 tosend             = ''
 ddict              = {}
+ProgArgs           = ''
 
 def stop(signum=0, frame=''):
     '''Stopping daemon
@@ -206,8 +207,8 @@ def startstop(stdout='/dev/null', stderr=None, stdin='/dev/null', pidfile='pid.t
     '''Start, stop restart and reload function.
     '''
 
-    if len(sys.argv) > 1:
-	action = sys.argv[1]
+    if len(ProgArgs) > 1:
+	action = ProgArgs
 	try:
 		pf  = file(pidfile,'r')
 		pid = int(pf.read().strip())
@@ -275,6 +276,36 @@ def main():
 if __name__ == "__main__":
     processflag = 'yes'
 
+    # Options from command line
+    from optparse import OptionParser
+
+    # Define usage and give command line options to parser object
+    Usage  = "usage: %prog [-c CONFIG] {start|stop|reload|restart}"
+    Parser = OptionParser(usage = Usage)
+    Parser.add_option("-c", "--configfile",
+		      action = "store",
+		      type   = "string",
+		      dest = "Conf_File",
+		      metavar = "FILE",
+		      default = configuration_file,
+		      help = "Path to the configuration file")
+    (options, args) = Parser.parse_args()
+
+    # Use configuration file given or default one
+    if os.path.exists(options.Conf_File):
+	configuration_file = options.Conf_File
+    else:
+	Parser.error( "Sorry, configuration file \"%s\" "\
+		      "missing or unreadable"\
+		      % options.Conf_File)
+
+    # args will always be the tuple of datas containing action
+    if len(args) == 0:
+	Parser.print_help()
+	sys.exit(1)
+    else:
+	ProgArgs = args[0]
+    
     # Read config file and initialize logger
     read_conf()
     log = Logger.Logger(loglevel)
