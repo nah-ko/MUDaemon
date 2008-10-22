@@ -94,7 +94,7 @@ class ProcessHandler:
 						Dest        = realsenddir + SubKey + '.TXT'
 						log.debug("::directory():: Fichier: %s - Dest: %s" % (Fichier, Dest))
 						TailleAvant = os.stat(Fichier).st_size
-						time.sleep(3)
+						time.sleep(15)
 						TailleApres = os.stat(Fichier).st_size
 						if TailleApres == TailleAvant:
 							try:
@@ -113,6 +113,10 @@ class ProcessHandler:
 									shutil.move(Fichier, Archives)
 								except (IOError, os.error), why:
 									log.err("::directory():: Can't copy %s to %s: %s" % (Fichier, Archives, str(why)))
+									try:
+										shutil.move(Fichier, 'ARCH_PB_' + Fichier)
+									except (IOError, os.error), why:
+										log.err("::directory():: Can't copy %s to %s: %s" % (Fichier, 'ARCH_PB_' + Fichier, str(why)))
 							else:
 								log.err("::directory():: Error: %s" % Output)
 		else:
