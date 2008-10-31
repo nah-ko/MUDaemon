@@ -73,6 +73,12 @@ class ProcessHandler:
 			log.debug("::directory():: scandir=%s" % scandir)
 			log.debug("::directory():: senddir=%s" % senddir)
 			for Key in dirdict:
+				# We test if an overriding option
+				# 'command' has been written to config
+				# section
+				if dirdict[Key].has_key('COMMAND'):
+				    command = dirdict[Key].get('COMMAND')
+				    log.debug("::directory():: Modified command: %s" % command)
 				# We test if an overriding option 'tosend' has been
 				# written to config section
 				if dirdict[Key].has_key('TOSEND'):
@@ -85,7 +91,7 @@ class ProcessHandler:
 				    log.debug("::directory():: Modified senddir: %s" % realsenddir)
 				else:
 				    realsenddir = senddir
-				for SubKey in [ option for option in dirdict[Key] if option != 'TOSEND' ]:
+				for SubKey in [ option for option in dirdict[Key] if option not in [ 'TOSEND', 'COMMAND' ]]:
 					log.debug("::directory():: Key: %s - SubKey: %s" % (Key, SubKey))
 					FileMask = dirdict[Key][SubKey]
 					log.debug("::directory():: FileMask=%s" % FileMask)
