@@ -30,6 +30,7 @@ from signal import SIGUSR1
 ProgPath           = os.path.dirname(os.path.realpath(sys.argv[0]))
 configuration_file = ProgPath + '/mudaemon.conf'
 loglevel           = 'info'
+logfile            = '/tmp/daemon.log'
 pidfile            = '/tmp/daemon.pid'
 polltime           = 10
 listfile           = '/tmp/liste'
@@ -45,7 +46,6 @@ def stop(signum=0, frame=''):
     '''
 
     log.debug('In stop function')
-    #log.info('Stopping MuDaemon')
     try:
 	pf  = file(pidfile,'r')
 	pid = int(pf.read().strip())
@@ -98,6 +98,11 @@ def read_conf():
     global listfile
     global toscan, tosend, ddict
 
+    # Get path before parsing config
+    if os.path.dirname(configuration_file) == '':
+	cfg_file = os.getcwd() + '/' + configuration_file
+	configuration_file = cfg_file
+
     sys.stdout.write("Loading configuration file '%s'\n" \
 			% configuration_file )
     sys.stdout.flush()
@@ -108,6 +113,7 @@ def read_conf():
 
     # recuperation des optionss
     pidfile  = config.get('LOG', 'pidfile')
+    logfile   = config.get('LOG', 'logfile')
     loglevel = config.get('LOG', 'loglevel')
 
     polltime = config.getint('GLOBAL', 'polltime')
@@ -129,7 +135,7 @@ def read_conf():
     command  = config.get(action, 'command')
 
 def MyProcess(action=''):
-    '''Execution du processus indique dans la conf
+    '''Execute command as described in configuration file
     '''
 
     import ProcessHandler
@@ -170,7 +176,7 @@ def daemonize(stdin='/dev/null', stdout='/dev/null', stderr='/dev/null', pidfile
         if pid > 0:
             sys.exit(0) # Exit first parent.
     except OSError, e: 
-        log.err ("fork #1 failed: (%d) %s" % (e.errno, e.strerror))
+        sys.stderr.write ("fork #1 failed: (%d) %s" % (e.errno, e.strerror))
         sys.exit(1)
         
     # Decouple from parent environment.
@@ -184,7 +190,7 @@ def daemonize(stdin='/dev/null', stdout='/dev/null', stderr='/dev/null', pidfile
         if pid > 0:
             sys.exit(0) # Exit second parent.
     except OSError, e: 
-        log.err ("fork #2 failed: (%d) %s" % (e.errno, e.strerror))
+        sys.stderr.write ("fork #2 failed: (%d) %s" % (e.errno, e.strerror))
         sys.exit(1)
         
     # Now I am a daemon!
@@ -231,7 +237,6 @@ def startstop(stdout='/dev/null', stderr=None, stdin='/dev/null', pidfile='pid.t
 			sys.exit(1)
 		try:
 			sys.stdout.write("Stopping daemon...\n")
-			log.info('Stopping Mu-Daemon...')
 			while 1:
 				# tentative d'arret avec SIGUSR1 au lieu
 				# de SIGTERM
@@ -306,9 +311,8 @@ if __name__ == "__main__":
     else:
 	ProgArgs = args[0]
     
-    # Read config file and initialize logger
+    # Read config file
     read_conf()
-    log = Logger.Logger(loglevel)
 
     # Reload configuration file if receiving a HUP signal
     signal.signal(signal.SIGHUP, reload)
@@ -316,7 +320,10 @@ if __name__ == "__main__":
     signal.signal(signal.SIGTERM, stop)
 
     # Start/stop/restart and reload routine
-    startstop(pidfile=pidfile)
+    startstop(pidfile=pidfile, stderr=logfile, stdout=logfile)
+
+    # Initialize logger
+    log = Logger.Logger(loglevel)
 
     # Main code
     main()
