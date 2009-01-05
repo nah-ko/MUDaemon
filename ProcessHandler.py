@@ -57,6 +57,7 @@ class ProcessHandler:
 
 		log = self.log
 		processflag, command = self.options
+		default_command = None
 
 		if not os.path.exists(scandir):
 			log.notice("::directory():: %s doesn't exists !" % scandir)
@@ -77,6 +78,8 @@ class ProcessHandler:
 				# 'command' has been written to config
 				# section
 				if dirdict[Key].has_key('COMMAND'):
+				    # Backup default COMMAND
+				    default_command = command
 				    command = dirdict[Key].get('COMMAND')
 				    log.debug("::directory():: Modified command: %s" % command)
 				# We test if an overriding option 'tosend' has been
@@ -125,6 +128,10 @@ class ProcessHandler:
 										log.err("::directory():: Can't copy %s to %s: %s" % (Fichier, 'ARCH_PB_' + Fichier, str(why)))
 							else:
 								log.err("::directory():: Error: %s" % Output)
+				if default_command is not None:
+				    command = default_command
+				    default_command = None
+				    log.debug("::directory():: Restore command: %s" % command)
 		else:
 			log.info("::directory():: Nothing to do, sleeping")
 
