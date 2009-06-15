@@ -123,9 +123,10 @@ class ProcessHandler:
 								except (IOError, os.error), why:
 									log.err("::directory():: Can't copy %s to %s: %s" % (Fichier, Archives, str(why)))
 									try:
-										shutil.move(Fichier, 'ARCH_PB_' + Fichier)
+										time.sleep(5)
+										shutil.move(Fichier, Fichier + '_ARCH_PB')
 									except (IOError, os.error), why:
-										log.err("::directory():: Can't copy %s to %s: %s" % (Fichier, 'ARCH_PB_' + Fichier, str(why)))
+										log.err("::directory():: Can't copy %s to %s: %s" % (Fichier, Fichier + 'ARCH_PB_', str(why)))
 							else:
 								log.err("::directory():: Error: %s" % Output)
 				if default_command is not None:
