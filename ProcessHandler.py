@@ -90,7 +90,7 @@ class ProcessHandler:
 				    realsenddir = dirdict[Key].get('TOSEND')
 				    if not os.path.exists(realsenddir):
 					log.notice("::directory():: %s doesn't exists !" % realsenddir)
-					return
+					continue
 				    log.debug("::directory():: Modified senddir: %s" % realsenddir)
 				else:
 				    realsenddir = senddir
@@ -100,6 +100,13 @@ class ProcessHandler:
 					log.debug("::directory():: FileMask=%s" % FileMask)
 					for F in fnmatch.filter(os.listdir(scandir), FileMask):
 						Fichier     = scandir + F
+						# check if ".lock" file
+						# exist to prevent from resend
+						# un-backuped file
+						Lock        = Fichier + ".lock"
+						if os.path.exists(Lock):
+							log.notice("::directory():: %s present, can't go beyond..." % Lock)
+							continue
 						Dest        = realsenddir + SubKey + '.TXT'
 						log.debug("::directory():: Fichier: %s - Dest: %s" % (Fichier, Dest))
 						TailleAvant = os.stat(Fichier).st_size
@@ -113,8 +120,14 @@ class ProcessHandler:
 
 							Commande = command % (Fichier, SubKey)
 							log.info("::directory():: Commande=%s" % Commande)
+							# create lock file
+							FD = open(Lock, "w")
+							FD.write(time.ctime(time.mktime(time.localtime())))
+							FD.close
+							log.info("::directory():: Lock file %s created" % Lock)
 							Status, Output = commands.getstatusoutput(Commande)
 
+							# Command successful, backup file
 							if Status == 0:
 								Archives = scandir + 'archives/' + Key +'/'
 								log.debug("::directory():: Archives: %s" % Archives)
@@ -126,7 +139,15 @@ class ProcessHandler:
 										time.sleep(5)
 										shutil.move(Fichier, Fichier + '_ARCH_PB')
 									except (IOError, os.error), why:
-										log.err("::directory():: Can't copy %s to %s: %s" % (Fichier, Fichier + 'ARCH_PB_', str(why)))
+										log.err("::directory():: Can't rename %s to %s: %s" % (Fichier, Fichier + '_ARCH_PB', str(why)))
+										log.err("::directory():: Second error, abort.")
+										continue
+								try:
+									os.remove(Lock)
+									log.info("::directory():: Lock %s removed" % Lock)
+								except (IOError, OSError):
+									log.err("::directory():: Can't remove lock, general problem")
+									continue
 							else:
 								log.err("::directory():: Error: %s" % Output)
 				if default_command is not None:
