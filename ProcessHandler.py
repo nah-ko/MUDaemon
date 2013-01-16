@@ -113,10 +113,10 @@ class ProcessHandler:
 						time.sleep(15)
 						TailleApres = os.stat(Fichier).st_size
 						if TailleApres == TailleAvant:
-							try:
-								shutil.copy(Fichier, Dest)
-							except (IOError, os.error), why:
-								log.err("::directory():: Can't copy %s to %s: %s" % (Fichier, Dest, str(why)))
+							#try:
+							#	shutil.copy(Fichier, Dest)
+							#except (IOError, os.error), why:
+							#	log.err("::directory():: Can't copy %s to %s: %s" % (Fichier, Dest, str(why)))
 
 							Commande = command % (Fichier, SubKey)
 							log.info("::directory():: Commande=%s" % Commande)
