@@ -105,7 +105,7 @@ class ProcessHandler:
 						# un-backuped file
 						Lock        = Fichier + ".lock"
 						if os.path.exists(Lock):
-							log.notice("::directory():: %s present, can't go beyond..." % Lock)
+							log.warning("::directory():: %s present, can't go beyond..." % Lock)
 							continue
 						Dest        = realsenddir + SubKey + '.TXT'
 						log.debug("::directory():: Fichier: %s - Dest: %s" % (Fichier, Dest))
