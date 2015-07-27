@@ -2,12 +2,10 @@
 
 # mudaemon - a multi-usage daemon
 #
-# Author:  Christophe Truffier <toffe@nah-ko.org>
+# Author:  Christophe Truffier
 #
 # This code is licensed under the GPL.
 # Get yourself a version here : http://www.gnu.org/copyleft/gpl.html
-
-# $Id$
 
 import sys, os, syslog
 

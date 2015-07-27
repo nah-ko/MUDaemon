@@ -3,8 +3,6 @@
 # Multi-usage daemon
 # This daemon can be used for file transfert, file conversion...
 
-# $Id$
-
 import sys, os, time, signal, socket
 import Logger
 from signal import SIGTERM

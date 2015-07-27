@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-# $Id$
-#
 # Define a class who handle each kind of processes
 #
 
